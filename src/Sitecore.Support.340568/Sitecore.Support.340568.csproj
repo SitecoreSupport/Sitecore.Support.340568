@@ -42,6 +42,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Sitecore.Commerce.Connect.CommerceServer, Version=10.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\COM.Sitecore.Commerce.Connect.CommerceServer.8.2.3\lib\Sitecore.Commerce.Connect.CommerceServer.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Sitecore.ContentSearch, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\SC.Sitecore.ContentSearch.8.2.7\lib\Sitecore.ContentSearch.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Sitecore.Kernel">
       <HintPath>..\packages\SC.Sitecore.Kernel.8.2.7\lib\Sitecore.Kernel.dll</HintPath>
       <Private>False</Private>
@@ -57,7 +65,10 @@
     <Reference Include="System.Configuration" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commerce\Connect\CommerceServer\Search\AllCatalogsCrawler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Commerce\Connect\CommerceServer\Search\SelectedCatalogsCrawler.cs" />
+    <Compile Include="Commerce\Connect\CommerceServer\Search\UserProfileCrawler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
