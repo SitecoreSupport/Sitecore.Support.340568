@@ -8,6 +8,8 @@ using Sitecore.Commerce.Connect.CommerceServer.Search;
 using Sitecore.ContentSearch;
 using Sitecore.ContentSearch.Diagnostics;
 using Sitecore.Diagnostics;
+using Sitecore.SecurityModel;
+using Sitecore.Sites;
 using Debug = System.Diagnostics.Debug;
 
 namespace Sitecore.Support.Commerce.Connect.CommerceServer.Search
@@ -66,6 +68,9 @@ namespace Sitecore.Support.Commerce.Connect.CommerceServer.Search
                 {
                     try
                     {
+                        SecurityState securityState = SecurityDisabler.CurrentValue;
+                        SiteContext contextSite = Context.Site;
+                       
                         var exceptions = new ConcurrentQueue<Exception>();
 
                         this.ParallelForeachProxy.ForEach(indexables, state.ParallelOptions, (indexable, loopState) =>
@@ -79,8 +84,36 @@ namespace Sitecore.Support.Commerce.Connect.CommerceServer.Search
                             {
                                 if (exceptions.Count == 0)
                                 {
-                                    this.DoAdd(context, indexable);
+                                    bool revertSecurityState = false;
+                                    bool revertSiteContext = false;
+                                    try
+                                    {
+                                        if (!(securityState == SecurityDisabler.CurrentValue || (securityState == SecurityState.Enabled && SecurityDisabler.CurrentValue == SecurityState.Default)))
+                                        {
+                                            SecurityDisabler.Enter(securityState);
+                                            revertSecurityState = true;
+                                        }
+                                        
+                                        if (Context.Site != contextSite)
+                                        {
+                                            SiteContextSwitcher.Enter(contextSite);
+                                            revertSiteContext = true;
+                                        }
+                                        this.DoAdd(context, indexable);
+                                    }
+                                    finally
+                                    {
+                                        if (revertSecurityState)
+                                        {
+                                            SecurityDisabler.Exit();
+                                        }
 
+                                        if (revertSiteContext)
+                                        {
+                                            SiteContextSwitcher.Exit();
+                                        }
+                                    }
+                                    
                                     var currentCrawlCount = Interlocked.Increment(ref state.CrawlCount);
                                     if (currentCrawlCount % LogIndexUpdateCountEveryNTimes == 0)
                                     {
@@ -183,6 +216,9 @@ namespace Sitecore.Support.Commerce.Connect.CommerceServer.Search
                 {
                     try
                     {
+                        SecurityState securityState = SecurityDisabler.CurrentValue;
+                        SiteContext contextSite = Context.Site;
+
                         var exceptions = new ConcurrentQueue<Exception>();
                         this.ParallelForeachProxy.ForEach(
                           indexables.Where(i => i != null),
@@ -199,16 +235,44 @@ namespace Sitecore.Support.Commerce.Connect.CommerceServer.Search
 
                               try
                               {
-                                  if (exceptions.Count == 0)
-                                  {
-                                      this.DoUpdate(context, indexable);
+                                 if (exceptions.Count == 0)
+                                 {
+                                     bool revertSecurityState = false;
+                                     bool revertSiteContext = false;
+                                      try
+                                      {
+                                          if (!(securityState == SecurityDisabler.CurrentValue || (securityState == SecurityState.Enabled && SecurityDisabler.CurrentValue == SecurityState.Default)))
+                                          {
+                                              SecurityDisabler.Enter(securityState);
+                                              revertSecurityState = true;
+                                          }
+
+                                          if (Context.Site != contextSite)
+                                          {
+                                              SiteContextSwitcher.Enter(contextSite);
+                                              revertSiteContext = true;
+                                          }
+                                          this.DoUpdate(context, indexable);
+                                      }
+                                      finally
+                                      {
+                                          if (revertSecurityState)
+                                          {
+                                              SecurityDisabler.Exit();
+                                          }
+
+                                          if (revertSiteContext)
+                                          {
+                                              SiteContextSwitcher.Exit();
+                                          }
+                                      }
 
                                       var currentCrawlCount = Interlocked.Increment(ref state.CrawlCount);
                                       if (currentCrawlCount % LogIndexUpdateCountEveryNTimes == 0)
                                       {
                                           CrawlingLog.Log.Info(string.Format("[Index={0}] Crawler: Updated {1} items", this.Index.Name, currentCrawlCount));
                                       }
-                                  }
+                                 }
                               }
                               catch (Exception ex)
                               {
